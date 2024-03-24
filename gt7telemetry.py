@@ -6,6 +6,14 @@ import sys
 import struct
 # pip3 install salsa20
 from salsa20 import Salsa20_xor
+from influxdb import InfluxDBClient
+import json
+
+
+client = InfluxDBClient(host='127.0.0.1', port=8086,pool_size=100,)
+client.switch_database('gt7')
+
+
 
 # ansi prefix
 pref = "\033["
@@ -219,19 +227,118 @@ while True:
 			tyreDiamFR = struct.unpack('f', ddata[0xB8:0xB8+4])[0]
 			tyreDiamRL = struct.unpack('f', ddata[0xBC:0xBC+4])[0]
 			tyreDiamRR = struct.unpack('f', ddata[0xC0:0xC0+4])[0]
+			try:
+				tyres = [tyreDiamFL,tyreDiamFR,tyreDiamRL,tyreDiamRR]
+				json_body = []
+				for tyre in tyres:
+					location = ""
+					if tyre == tyreDiamFL:
+						location = "FL"
+					elif tyre == tyreDiamFR:
+						location = "FR"
+					elif tyre == tyreDiamRL:
+						location = "RL"
+					elif tyre == tyreDiamRR:
+						location = "RR"
+					point =  {
+						"measurement": "gt7",
+						"tags": {
+							"location": location,
+							},
+						"fields": {
+							"Diam": float(tyre)
+							}
+						}
+					json_body.append(point)
+				client.write_points(json_body)
+			except Exception as e:
+				pass
 
 			tyreSpeedFL = abs(3.6 * tyreDiamFL * struct.unpack('f', ddata[0xA4:0xA4+4])[0])
 			tyreSpeedFR = abs(3.6 * tyreDiamFR * struct.unpack('f', ddata[0xA8:0xA8+4])[0])
 			tyreSpeedRL = abs(3.6 * tyreDiamRL * struct.unpack('f', ddata[0xAC:0xAC+4])[0])
 			tyreSpeedRR = abs(3.6 * tyreDiamRR * struct.unpack('f', ddata[0xB0:0xB0+4])[0])
+			try:
+				tyres = [tyreSpeedFL,tyreSpeedFR,tyreSpeedRL,tyreSpeedRR]
+				json_body = []
+				for tyre in tyres:
+					location = ""
+					if tyre == tyreSpeedFL:
+						location = "FL"
+					elif tyre == tyreSpeedFR:
+						location = "FR"
+					elif tyre == tyreSpeedRL:
+						location = "RL"
+					elif tyre == tyreSpeedRR:
+						location = "RR"
+					point =  {
+						"measurement": "gt7",
+						"tags": {
+							"location": location,
+							},
+						"fields": {
+							"TyreSpeed": float(tyre)
+							}
+						}
+					json_body.append(point)
+				client.write_points(json_body)
+			except Exception as e:
+				pass
+
+
+
 
 			carSpeed = 3.6 * struct.unpack('f', ddata[0x4C:0x4C+4])[0]
+			try:
+				carSpeeds = [carSpeed]
+				json_body = []
+				for speed in carSpeeds:
+					point =  {
+						"measurement": "gt7",
+						"fields": {
+							"CarSpeed": float(speed)
+							}
+						}
+					json_body.append(point)
+				client.write_points(json_body)
+			except Exception as e:
+				pass
+
+
+
+			
 
 			if carSpeed > 0:
 				tyreSlipRatioFL = '{:6.2f}'.format(tyreSpeedFL / carSpeed)
 				tyreSlipRatioFR = '{:6.2f}'.format(tyreSpeedFR / carSpeed)
 				tyreSlipRatioRL = '{:6.2f}'.format(tyreSpeedRL / carSpeed)
 				tyreSlipRatioRR = '{:6.2f}'.format(tyreSpeedRR / carSpeed)
+				try:
+					tyres = [tyreSlipRatioFL,tyreSlipRatioFR,tyreSlipRatioRL,tyreSlipRatioRR]
+					json_body = []
+					for tyre in tyres:
+						location = ""
+						if tyre == tyreSlipRatioFL:
+							location = "FL"
+						elif tyre == tyreSlipRatioFR:
+							location = "FR"
+						elif tyre == tyreSlipRatioRL:
+							location = "RL"
+						elif tyre == tyreSlipRatioRR:
+							location = "RR"
+						point =  {
+							"measurement": "gt7",
+							"tags": {
+								"tyre": location,
+								},
+							"fields": {
+								"SlipRatio": float(tyre)
+								}
+							}
+						json_body.append(point)
+					client.write_points(json_body)
+				except Exception as e:
+					pass
 			else:
 				tyreSlipRatioFL = '  –  '
 				tyreSlipRatioFR = '  –  '
@@ -286,7 +393,37 @@ while True:
 			printAt('{:6.0f}'.format(1000 * struct.unpack('f', ddata[0x38:0x38+4])[0]), 18, 49)				# ride height
 
 			printAt('{:6.1f}'.format(struct.unpack('f', ddata[0x60:0x60+4])[0]), 21, 5)						# tyre temp FL
+			try:
+				json_body = []
+				point =  {
+					"measurement": "gt7",
+					"tags": {
+						"location": "FL",
+						},
+					"fields": {
+						"TyreTemp": float(struct.unpack('f', ddata[0x60:0x60+4])[0])
+						}
+					}
+				json_body.append(point)
+				client.write_points(json_body)
+			except Exception as e:
+				pass			
 			printAt('{:6.1f}'.format(struct.unpack('f', ddata[0x64:0x64+4])[0]), 21, 25)					# tyre temp FR
+			try:
+				json_body = []
+				point =  {
+					"measurement": "gt7",
+					"tags": {
+						"location": "FR",
+						},
+					"fields": {
+						"TyreTemp": float(struct.unpack('f', ddata[0x64:0x64+4])[0])
+						}
+					}
+				json_body.append(point)
+				client.write_points(json_body)
+			except Exception as e:
+				pass	
 			printAt('{:6.1f}'.format(200 * tyreDiamFL), 21, 43)												# tyre diameter FL
 			printAt('{:6.1f}'.format(200 * tyreDiamFR), 21, 50)												# tyre diameter FR
 
@@ -299,7 +436,37 @@ while True:
 			printAt('{:6.3f}'.format(struct.unpack('f', ddata[0xC8:0xC8+4])[0]), 23, 25)					# suspension FR
 
 			printAt('{:6.1f}'.format(struct.unpack('f', ddata[0x68:0x68+4])[0]), 25, 5)						# tyre temp RL
+			try:
+				json_body = []
+				point =  {
+					"measurement": "gt7",
+					"tags": {
+						"location": "RL",
+						},
+					"fields": {
+						"TyreTemp": float(struct.unpack('f', ddata[0x68:0x68+4])[0])
+						}
+					}
+				json_body.append(point)
+				client.write_points(json_body)
+			except Exception as e:
+				pass
 			printAt('{:6.1f}'.format(struct.unpack('f', ddata[0x6C:0x6C+4])[0]), 25, 25)					# tyre temp RR
+			try:
+				json_body = []
+				point =  {
+					"measurement": "gt7",
+					"tags": {
+						"location": "RR",
+						},
+					"fields": {
+						"TyreTemp": float(struct.unpack('f', ddata[0x6C:0x6C+4])[0])
+						}
+					}
+				json_body.append(point)
+				client.write_points(json_body)
+			except Exception as e:
+				pass
 			printAt('{:6.1f}'.format(200 * tyreDiamRL), 25, 43)												# tyre diameter RL
 			printAt('{:6.1f}'.format(200 * tyreDiamRR), 25, 50)												# tyre diameter RR
 
