@@ -1,4 +1,10 @@
 # gt7telemetry
+
+## Update
+Will send tyre and speed data to local influxdb at 127.0.0.1 to database gt7.
+Change it as you will
+
+
 Python script to display GT7 telemetry data.
 
 **Needs to be run from the terminal**, and works best with a terminal of at least 92 x 42 characters. The output is in a separate buffer, but you can comment out lines 10-29 to just write to your current terminal (might want to clear the terminal first).
